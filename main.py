@@ -107,23 +107,22 @@ st.text_input(
 
 
 # =======================================
-# 그래프 2. 장르별 영화 트리맵
+# 그래프 2. 장르별 영화 총 관객 트리맵
 # =======================================
 st.divider()
 st.header("그래프 2. 장르별 영화 총 관객 트리맵")
 
-# 트리맵용 데이터
 treemap_df = df[
     ["genre", "movieNm", "total_audi"]
 ].copy()
 
-# 결측값 제거
 treemap_df = treemap_df.dropna(
     subset=["genre", "movieNm", "total_audi"]
 )
 
-# 총 관객이 음수인 데이터가 있다면 제외
-treemap_df = treemap_df[treemap_df["total_audi"] >= 0]
+treemap_df = treemap_df[
+    treemap_df["total_audi"] >= 0
+]
 
 fig2 = px.treemap(
     treemap_df,
@@ -151,6 +150,103 @@ st.text_input(
     "장르별 영화 총 관객 트리맵에서 알 수 있는 점을 한 문장으로 적어 보세요.",
     placeholder="예: 같은 장르 안에서도 영화별 총 관객 수에 큰 차이가 나타난다.",
     key="explanation2"
+)
+
+
+# =======================================
+# 그래프 3. 총 관객 수 히스토그램
+# =======================================
+st.divider()
+st.header("그래프 3. 영화별 총 관객 수 분포")
+
+hist_df = df[
+    ["movieNm", "total_audi"]
+].copy()
+
+hist_df = hist_df.dropna(
+    subset=["movieNm", "total_audi"]
+)
+
+hist_df = hist_df[
+    hist_df["total_audi"] >= 0
+]
+
+# 히스토그램
+fig3 = px.histogram(
+    hist_df,
+    x="total_audi",
+    nbins=20,
+    title="영화별 총 관객 수 분포",
+    labels={
+        "total_audi": "총 관객 수",
+        "count": "영화 편수"
+    }
+)
+
+fig3.update_traces(
+    hovertemplate=(
+        "총 관객 구간: %{x}<br>"
+        "영화 편수: %{y}편"
+        "<extra></extra>"
+    )
+)
+
+fig3.update_layout(
+    height=550
+)
+
+st.plotly_chart(fig3, use_container_width=True)
+
+
+# ---------------------------------------
+# 가장 영화가 많이 몰려 있는 구간 계산
+# ---------------------------------------
+counts, bin_edges = pd.cut(
+    hist_df["total_audi"],
+    bins=20,
+    include_lowest=True,
+    retbins=True
+)
+
+bin_counts = counts.value_counts().sort_index()
+
+most_common_bin = bin_counts.idxmax()
+most_common_count = bin_counts.max()
+
+lower_bound = most_common_bin.left
+upper_bound = most_common_bin.right
+
+
+# ---------------------------------------
+# 총 관객이 가장 많은 영화 계산
+# ---------------------------------------
+max_movie = hist_df.loc[
+    hist_df["total_audi"].idxmax()
+]
+
+max_movie_name = max_movie["movieNm"]
+max_movie_audience = int(max_movie["total_audi"])
+
+
+# ---------------------------------------
+# 그래프 설명 문구
+# ---------------------------------------
+st.markdown("### 이 그래프로 알 수 있는 것")
+
+st.write(
+    f"대부분의 영화는 총 관객 **약 {lower_bound:,.0f}명 ~ "
+    f"{upper_bound:,.0f}명** 구간에 가장 많이 몰려 있습니다."
+)
+
+st.write(
+    f"가장 관객이 많은 영화는 **「{max_movie_name}」**으로, "
+    f"총 관객은 **{max_movie_audience:,}명**입니다."
+)
+
+st.text_input(
+    "이 히스토그램을 보고 알 수 있는 점을 한 문장으로 정리해 보세요.",
+    placeholder="예: 영화별 총 관객 수는 특정 구간에 많이 몰려 있으며 일부 영화는 매우 많은 관객을 기록했다.",
+    key="explanation3"
 )
 
 
