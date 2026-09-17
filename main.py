@@ -12,7 +12,6 @@ st.set_page_config(
 
 st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 
-# 데이터 주소
 DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
 
 
@@ -171,7 +170,6 @@ hist_df = hist_df[
     hist_df["total_audi"] >= 0
 ]
 
-# 히스토그램
 fig3 = px.histogram(
     hist_df,
     x="total_audi",
@@ -197,10 +195,7 @@ fig3.update_layout(
 
 st.plotly_chart(fig3, use_container_width=True)
 
-
-# ---------------------------------------
-# 가장 영화가 많이 몰려 있는 구간 계산
-# ---------------------------------------
+# 가장 영화가 많이 몰려 있는 구간
 counts, bin_edges = pd.cut(
     hist_df["total_audi"],
     bins=20,
@@ -211,15 +206,10 @@ counts, bin_edges = pd.cut(
 bin_counts = counts.value_counts().sort_index()
 
 most_common_bin = bin_counts.idxmax()
-most_common_count = bin_counts.max()
-
 lower_bound = most_common_bin.left
 upper_bound = most_common_bin.right
 
-
-# ---------------------------------------
-# 총 관객이 가장 많은 영화 계산
-# ---------------------------------------
+# 총 관객이 가장 많은 영화
 max_movie = hist_df.loc[
     hist_df["total_audi"].idxmax()
 ]
@@ -227,10 +217,6 @@ max_movie = hist_df.loc[
 max_movie_name = max_movie["movieNm"]
 max_movie_audience = int(max_movie["total_audi"])
 
-
-# ---------------------------------------
-# 그래프 설명 문구
-# ---------------------------------------
 st.markdown("### 이 그래프로 알 수 있는 것")
 
 st.write(
@@ -247,6 +233,69 @@ st.text_input(
     "이 히스토그램을 보고 알 수 있는 점을 한 문장으로 정리해 보세요.",
     placeholder="예: 영화별 총 관객 수는 특정 구간에 많이 몰려 있으며 일부 영화는 매우 많은 관객을 기록했다.",
     key="explanation3"
+)
+
+
+# =======================================
+# 그래프 4. 개봉일 스크린 수와 총 관객의 관계
+# =======================================
+st.divider()
+st.header("그래프 4. 개봉일 스크린 수와 총 관객의 관계")
+
+scatter_df = df[
+    ["movieNm", "genre", "first_scrn", "total_audi"]
+].copy()
+
+# 필요한 데이터가 없는 행 제거
+scatter_df = scatter_df.dropna(
+    subset=["movieNm", "genre", "first_scrn", "total_audi"]
+)
+
+# 스크린 수와 총 관객이 음수인 데이터 제외
+scatter_df = scatter_df[
+    (scatter_df["first_scrn"] >= 0) &
+    (scatter_df["total_audi"] >= 0)
+]
+
+fig4 = px.scatter(
+    scatter_df,
+    x="first_scrn",
+    y="total_audi",
+    color="genre",
+    hover_name="movieNm",
+    title="개봉일 스크린 수와 총 관객의 관계",
+    labels={
+        "first_scrn": "개봉일 스크린 수",
+        "total_audi": "총 관객 수",
+        "genre": "장르"
+    }
+)
+
+fig4.update_traces(
+    marker=dict(
+        size=9,
+        opacity=0.75
+    ),
+    hovertemplate=(
+        "<b>%{hovertext}</b><br>"
+        "개봉일 스크린 수: %{x:,}개<br>"
+        "총 관객: %{y:,}명"
+        "<extra></extra>"
+    )
+)
+
+fig4.update_layout(
+    height=650,
+    legend_title="장르"
+)
+
+st.plotly_chart(fig4, use_container_width=True)
+
+st.markdown("### 이 그래프로 알 수 있는 것")
+st.text_input(
+    "개봉일 스크린 수와 총 관객의 관계에서 알 수 있는 점을 한 문장으로 적어 보세요.",
+    placeholder="예: 개봉일 스크린 수가 많은 영화일수록 총 관객이 많은 경향이 나타나는지 확인할 수 있다.",
+    key="explanation4"
 )
 
 
