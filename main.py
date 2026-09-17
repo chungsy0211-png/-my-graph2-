@@ -57,10 +57,6 @@ def load_data():
 
 df = load_data()
 
-
-# ---------------------------------------
-# 데이터 확인
-# ---------------------------------------
 st.info(f"총 {len(df)}편의 영화 데이터를 불러왔습니다.")
 
 
@@ -78,7 +74,7 @@ genre_count = (
 
 genre_count.columns = ["장르", "영화 편수"]
 
-fig = px.pie(
+fig1 = px.pie(
     genre_count,
     names="장르",
     values="영화 편수",
@@ -86,7 +82,7 @@ fig = px.pie(
     title="장르별 영화 편수"
 )
 
-fig.update_traces(
+fig1.update_traces(
     textinfo="percent",
     hovertemplate=(
         "<b>%{label}</b><br>"
@@ -95,22 +91,71 @@ fig.update_traces(
     )
 )
 
-fig.update_layout(
+fig1.update_layout(
     legend_title="장르",
     height=550
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig1, use_container_width=True)
 
 st.markdown("### 이 그래프로 알 수 있는 것")
 st.text_input(
     "장르별 영화 편수에서 알 수 있는 점을 한 문장으로 적어 보세요.",
-    placeholder="예: 이 기간에는 ○○ 장르의 영화가 가장 많이 개봉했다."
+    placeholder="예: 이 기간에는 ○○ 장르의 영화가 가장 많이 포함되어 있다.",
+    key="explanation1"
+)
+
+
+# =======================================
+# 그래프 2. 장르별 영화 트리맵
+# =======================================
+st.divider()
+st.header("그래프 2. 장르별 영화 총 관객 트리맵")
+
+# 트리맵용 데이터
+treemap_df = df[
+    ["genre", "movieNm", "total_audi"]
+].copy()
+
+# 결측값 제거
+treemap_df = treemap_df.dropna(
+    subset=["genre", "movieNm", "total_audi"]
+)
+
+# 총 관객이 음수인 데이터가 있다면 제외
+treemap_df = treemap_df[treemap_df["total_audi"] >= 0]
+
+fig2 = px.treemap(
+    treemap_df,
+    path=["genre", "movieNm"],
+    values="total_audi",
+    title="장르별 영화 총 관객 트리맵"
+)
+
+fig2.update_traces(
+    hovertemplate=(
+        "<b>%{label}</b><br>"
+        "총 관객: %{value:,}명"
+        "<extra></extra>"
+    )
+)
+
+fig2.update_layout(
+    height=700
+)
+
+st.plotly_chart(fig2, use_container_width=True)
+
+st.markdown("### 이 그래프로 알 수 있는 것")
+st.text_input(
+    "장르별 영화 총 관객 트리맵에서 알 수 있는 점을 한 문장으로 적어 보세요.",
+    placeholder="예: 같은 장르 안에서도 영화별 총 관객 수에 큰 차이가 나타난다.",
+    key="explanation2"
 )
 
 
 # ---------------------------------------
-# 앱 하단
+# 데이터 출처
 # ---------------------------------------
 st.divider()
 st.caption("데이터 출처: KOBIS 영화관입장권통합전산망 데이터")
