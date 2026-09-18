@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+
 # ==========================================
 # 페이지 설정
 # ==========================================
@@ -82,12 +83,7 @@ st.info(f"총 {len(df)}편의 영화 데이터를 불러왔습니다.")
 st.divider()
 st.header("그래프 1. 장르별 영화 편수")
 
-genre_count = (
-    df["genre"]
-    .value_counts()
-    .reset_index()
-)
-
+genre_count = df["genre"].value_counts().reset_index()
 genre_count.columns = ["장르", "영화 편수"]
 
 fig1 = px.pie(
@@ -113,10 +109,7 @@ fig1.update_layout(
     legend_title="장르"
 )
 
-st.plotly_chart(
-    fig1,
-    use_container_width=True
-)
+st.plotly_chart(fig1, use_container_width=True)
 
 st.markdown("### 이 그래프로 알 수 있는 것")
 
@@ -129,7 +122,7 @@ st.text_input(
 
 # ==========================================
 # 그래프 2
-# 장르별 총 관객 트리맵
+# 장르별 영화 총 관객 트리맵
 # ==========================================
 st.divider()
 st.header("그래프 2. 장르별 영화 총 관객 트리맵")
@@ -146,29 +139,29 @@ treemap_df = treemap_df[
     treemap_df["total_audi"] >= 0
 ]
 
-fig2 = px.treemap(
-    treemap_df,
-    path=["genre", "movieNm"],
-    values="total_audi",
-    title="장르별 영화 총 관객 트리맵"
-)
+if len(treemap_df) > 0:
 
-fig2.update_traces(
-    hovertemplate=(
-        "<b>%{label}</b><br>"
-        "총 관객: %{value:,}명"
-        "<extra></extra>"
+    fig2 = px.treemap(
+        treemap_df,
+        path=["genre", "movieNm"],
+        values="total_audi",
+        title="장르별 영화 총 관객 트리맵"
     )
-)
 
-fig2.update_layout(
-    height=700
-)
+    fig2.update_traces(
+        hovertemplate=(
+            "<b>%{label}</b><br>"
+            "총 관객: %{value:,}명"
+            "<extra></extra>"
+        )
+    )
 
-st.plotly_chart(
-    fig2,
-    use_container_width=True
-)
+    fig2.update_layout(height=700)
+
+    st.plotly_chart(fig2, use_container_width=True)
+
+else:
+    st.warning("트리맵을 그릴 수 있는 데이터가 없습니다.")
 
 st.markdown("### 이 그래프로 알 수 있는 것")
 
@@ -181,7 +174,7 @@ st.text_input(
 
 # ==========================================
 # 그래프 3
-# 총 관객 수 분포
+# 영화별 총 관객 수 분포
 # ==========================================
 st.divider()
 st.header("그래프 3. 영화별 총 관객 수 분포")
@@ -198,36 +191,24 @@ hist_df = hist_df[
     hist_df["total_audi"] >= 0
 ]
 
-fig3 = px.histogram(
-    hist_df,
-    x="total_audi",
-    nbins=20,
-    title="영화별 총 관객 수 분포",
-    labels={
-        "total_audi": "총 관객 수",
-        "count": "영화 편수"
-    }
-)
-
-fig3.update_traces(
-    hovertemplate=(
-        "총 관객 구간: %{x}<br>"
-        "영화 편수: %{y}편"
-        "<extra></extra>"
-    )
-)
-
-fig3.update_layout(
-    height=550
-)
-
-st.plotly_chart(
-    fig3,
-    use_container_width=True
-)
-
 if len(hist_df) > 0:
 
+    fig3 = px.histogram(
+        hist_df,
+        x="total_audi",
+        nbins=20,
+        title="영화별 총 관객 수 분포",
+        labels={
+            "total_audi": "총 관객 수",
+            "count": "영화 편수"
+        }
+    )
+
+    fig3.update_layout(height=550)
+
+    st.plotly_chart(fig3, use_container_width=True)
+
+    # 가장 많이 몰린 구간
     hist_df["구간"] = pd.cut(
         hist_df["total_audi"],
         bins=20,
@@ -237,7 +218,6 @@ if len(hist_df) > 0:
     counts = hist_df["구간"].value_counts()
 
     if len(counts) > 0:
-
         most_common = counts.idxmax()
 
         st.write(
@@ -246,6 +226,7 @@ if len(hist_df) > 0:
             f"{most_common.right:,.0f}명**입니다."
         )
 
+    # 가장 관객이 많은 영화
     max_index = hist_df["total_audi"].idxmax()
     max_movie = hist_df.loc[max_index]
 
@@ -254,6 +235,9 @@ if len(hist_df) > 0:
         f"**「{max_movie['movieNm']}」**이며, "
         f"총 관객은 **{int(max_movie['total_audi']):,}명**입니다."
     )
+
+else:
+    st.warning("히스토그램을 그릴 수 있는 데이터가 없습니다.")
 
 st.markdown("### 이 그래프로 알 수 있는 것")
 
@@ -289,35 +273,35 @@ scatter_df = scatter_df[
     & (scatter_df["total_audi"] >= 0)
 ]
 
-fig4 = px.scatter(
-    scatter_df,
-    x="first_scrn",
-    y="total_audi",
-    color="genre",
-    hover_name="movieNm",
-    title="개봉일 스크린 수와 총 관객의 관계",
-    labels={
-        "first_scrn": "개봉일 스크린 수",
-        "total_audi": "총 관객 수",
-        "genre": "장르"
-    }
-)
+if len(scatter_df) > 0:
 
-fig4.update_traces(
-    marker=dict(
-        size=9,
-        opacity=0.75
+    fig4 = px.scatter(
+        scatter_df,
+        x="first_scrn",
+        y="total_audi",
+        color="genre",
+        hover_name="movieNm",
+        title="개봉일 스크린 수와 총 관객의 관계",
+        labels={
+            "first_scrn": "개봉일 스크린 수",
+            "total_audi": "총 관객 수",
+            "genre": "장르"
+        }
     )
-)
 
-fig4.update_layout(
-    height=650
-)
+    fig4.update_traces(
+        marker=dict(
+            size=9,
+            opacity=0.75
+        )
+    )
 
-st.plotly_chart(
-    fig4,
-    use_container_width=True
-)
+    fig4.update_layout(height=650)
+
+    st.plotly_chart(fig4, use_container_width=True)
+
+else:
+    st.warning("산점도를 그릴 수 있는 데이터가 없습니다.")
 
 st.markdown("### 이 그래프로 알 수 있는 것")
 
@@ -382,10 +366,7 @@ if len(box_df) > 0:
         showlegend=False
     )
 
-    st.plotly_chart(
-        fig5,
-        use_container_width=True
-    )
+    st.plotly_chart(fig5, use_container_width=True)
 
 else:
     st.warning("10편 이상의 영화가 있는 장르가 없습니다.")
@@ -457,14 +438,9 @@ if len(bubble_df) > 0:
         )
     )
 
-    fig6.update_layout(
-        height=700
-    )
+    fig6.update_layout(height=700)
 
-    st.plotly_chart(
-        fig6,
-        use_container_width=True
-    )
+    st.plotly_chart(fig6, use_container_width=True)
 
 else:
     st.warning("버블 그래프를 그릴 수 있는 데이터가 없습니다.")
@@ -474,7 +450,7 @@ st.markdown("### 이 그래프로 알 수 있는 것")
 st.text_input(
     "그래프 6에서 알 수 있는 점을 한 문장으로 적어 보세요.",
     key="explanation6",
-    placeholder="예: 첫 주 관객이 많은 영화일수록 버블의 크기가 크게 나타난다."
+    placeholder="예: 첫 주 관객이 많은 영화는 버블의 크기가 크게 나타난다."
 )
 
 
@@ -489,7 +465,6 @@ sunburst_df = df[
     ["nation", "genre"]
 ].copy()
 
-# 결측값 처리
 sunburst_df["nation"] = (
     sunburst_df["nation"]
     .fillna("미상")
@@ -504,7 +479,7 @@ sunburst_df["genre"] = (
     .str.strip()
 )
 
-# 빈 문자열 처리
+# 빈 값 처리
 sunburst_df.loc[
     sunburst_df["nation"] == "",
     "nation"
@@ -515,7 +490,7 @@ sunburst_df.loc[
     "genre"
 ] = "미상"
 
-# 국가 × 장르별 영화 편수 계산
+# 국가와 장르별 영화 편수 계산
 sunburst_count = (
     sunburst_df
     .groupby(
@@ -546,14 +521,9 @@ if len(sunburst_count) > 0:
         )
     )
 
-    fig7.update_layout(
-        height=700
-    )
+    fig7.update_layout(height=700)
 
-    st.plotly_chart(
-        fig7,
-        use_container_width=True
-    )
+    st.plotly_chart(fig7, use_container_width=True)
 
 else:
     st.warning("선버스트 그래프를 그릴 수 있는 데이터가 없습니다.")
@@ -564,4 +534,94 @@ st.text_input(
     "그래프 7에서 알 수 있는 점을 한 문장으로 적어 보세요.",
     key="explanation7",
     placeholder="예: 제작 국가에 따라 영화 장르의 구성과 영화 편수가 다르게 나타난다."
+)
+
+
+# ==========================================
+# 그래프 8
+# 10위권에 머문 날 수와 총 관객의 관계
+# ==========================================
+st.divider()
+st.header("그래프 8. 10위권에 오래 머문 영화는 총 관객도 많은가?")
+
+graph8_df = df[
+    [
+        "movieNm",
+        "genre",
+        "days_in_top10",
+        "total_audi"
+    ]
+].copy()
+
+graph8_df = graph8_df.dropna(
+    subset=[
+        "movieNm",
+        "genre",
+        "days_in_top10",
+        "total_audi"
+    ]
+)
+
+graph8_df = graph8_df[
+    (graph8_df["days_in_top10"] >= 0)
+    & (graph8_df["total_audi"] >= 0)
+]
+
+if len(graph8_df) > 0:
+
+    fig8 = px.scatter(
+        graph8_df,
+        x="days_in_top10",
+        y="total_audi",
+        color="genre",
+        hover_name="movieNm",
+        title="10위권에 머문 날 수와 총 관객의 관계",
+        labels={
+            "days_in_top10": "10위권에 머문 날 수",
+            "total_audi": "총 관객 수",
+            "genre": "장르"
+        }
+    )
+
+    fig8.update_traces(
+        marker=dict(
+            size=10,
+            opacity=0.75
+        ),
+        hovertemplate=(
+            "<b>%{hovertext}</b><br>"
+            "10위권에 머문 날 수: %{x}일<br>"
+            "총 관객: %{y:,}명"
+            "<extra></extra>"
+        )
+    )
+
+    fig8.update_layout(
+        height=650
+    )
+
+    st.plotly_chart(
+        fig8,
+        use_container_width=True
+    )
+
+else:
+    st.warning("그래프 8을 그릴 수 있는 데이터가 없습니다.")
+
+
+# ==========================================
+# 그래프 8 질문과 해석
+# ==========================================
+st.markdown("### 질문")
+
+st.write(
+    "**10위권에 오래 머문 영화는 총 관객도 많은가?**"
+)
+
+st.markdown("### 이 그래프로 알 수 있는 것")
+
+st.text_input(
+    "그래프 8을 보고 질문에 대한 답을 한 문장으로 적어 보세요.",
+    key="explanation8",
+    placeholder="예: 10위권에 머문 날 수가 많은 영화일수록 총 관객도 많은 경향이 나타나는지 확인할 수 있다."
 )
